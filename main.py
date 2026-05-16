@@ -138,15 +138,18 @@ class NacelleThermalPipeline:
             if self.df is None:
                 raise ValueError("No data available for animation processing.")
             
-            # Sort chronologically by a proxy timeline index to ensure clean rendering over time
-            df_sorted = self.df.reset_index(drop=True).iloc[::100] # Downsampled by 100 to ensure faster output compiles
+            print("[INFO] Initiating optimized lightweight animation compilation...")
             
-            # Animation 1: Matplotlib Time-Evolution of Nacelle Temperatures
+            df_sorted = self.df.reset_index(drop=True).iloc[::100].copy()
+            df_sorted["Timeline_Index"] = range(len(df_sorted))
+            df_limited = df_sorted.head(100).copy()
+            
+            # ANIMATION 1: Matplotlib Time-Evolution of Nacelle Temperatures
             fig, ax = plt.subplots(figsize=(8, 4))
-            x_data, y_data = [], []
             line, = ax.plot([], [], 'r-', label='Nacelle Air Enclosure Temp')
-            ax.set_xlim(0, len(df_sorted))
-            ax.set_ylim(df_sorted['nacelle_temp'].min() - 2, df_sorted['nacelle_temp'].max() + 2)
+            
+            ax.set_xlim(0, len(df_limited))
+            ax.set_ylim(df_limited['nacelle_temp'].min() - 2, df_limited['nacelle_temp'].max() + 2)
             ax.set_xlabel('Downsampled Operational Chronological Sequence Index')
             ax.set_ylabel('Temperature (°C)')
             ax.set_title('Real-time Dynamic Ambient Nacelle Thermal Fluctuations')
@@ -157,27 +160,36 @@ class NacelleThermalPipeline:
                 return line,
 
             def update(frame):
-                x_data.append(frame)
-                y_data.append(df_sorted['nacelle_temp'].iloc[frame])
-                line.set_data(x_data, y_data)
+                x_vals = df_limited["Timeline_Index"].iloc[:frame].tolist()
+                y_vals = df_limited["nacelle_temp"].iloc[:frame].tolist()
+                line.set_data(x_vals, y_vals)
                 return line,
 
-            ani = animation.FuncAnimation(fig, update, frames=range(len(df_sorted)), init_func=init, blit=True, repeat=False)
+            ani = animation.FuncAnimation(
+                fig, update, frames=len(df_limited), init_func=init, blit=True, repeat=False
+            )
             ani.save(os.path.join(self.output_dir, 'animated_thermal_timeline.gif'), writer='pillow', fps=15)
             plt.close()
 
-            # Animation 2: Plotly Express HTML Interactive Animated Scatter Profile
-            # Create a localized artificial categorical grouping like "Hour Blocks" to trace visual steps smoothly
-            df_sorted['Hour_Block'] = (df_sorted.index // 20).astype(str)
+            # ANIMATION 2: Plotly Express HTML Interactive Animated Scatter Profile (Fixed Gaps)
+            df_limited['Hour_block'] = df_limited["Timeline_Index"].astype(str)
+            
             fig_plotly = px.scatter(
-                df_sorted, 
+                df_limited, 
                 x="generator_speed", 
                 y="active_power_calculated_by_converter", 
-                animation_frame="Sequence_Frame",
+                animation_frame="Hour_block",
                 color="generator_winding_temp_max",
                 title="Dynamic Kinetic Power Generation Mapping vs Thermal Loads",
-                labels={"generator_speed": "Generator Rotational Speed (RPM)", "active_power_calculated_by_converter": "Active Power (kW)"}
+                labels={
+                    "generator_speed": "Generator Rotational Speed (RPM)", 
+                    "active_power_calculated_by_converter": "Active Power (kW)",
+                    "Hour_block": "Data Step Segment"
+                },
+                range_x=[df_limited["generator_speed"].min() * 0.9, df_limited["generator_speed"].max() * 1.1],
+                range_y=[df_limited["active_power_calculated_by_converter"].min() * 0.9, df_limited["active_power_calculated_by_converter"].max() * 1.1]
             )
+            
             fig_plotly.write_html(os.path.join(self.output_dir, 'animated_power_curve_shift.html'))
             
             print("[ANIMATION SUCCESS] 2 Animation exports successfully compiled and written to storage.")
