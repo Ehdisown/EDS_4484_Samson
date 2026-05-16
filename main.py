@@ -55,3 +55,39 @@ class NacelleThermalPipeline:
             
         except Exception as e:
             print(f"[CLEANING ERROR] Pipeline failed during data processing: {e}")
+        
+    def perform_engineering_analytics(self):
+        """Module 3: Advanced Numerical Analysis using Mandatory NumPy Interfacing."""
+        try:
+            if self.df is None or len(self.df) == 0:
+                raise ValueError("Dataset is empty. Cannot perform analytics.")
+
+            # Extract pure NumPy arrays for computing high-level statistics
+            gen_temp = np.array(self.df['generator_winding_temp_max'], dtype=np.float64)
+            power_out = np.array(self.df['active_power_calculated_by_converter'], dtype=np.float64)
+            nacelle_temp = np.array(self.df['nacelle_temp'], dtype=np.float64)
+
+            # Execution of Section IV NumPy Requirements
+            stats = {
+                "Mean": np.mean(gen_temp),
+                "Median": np.median(gen_temp),
+                "Std_Deviation": np.std(gen_temp),
+                "Variance": np.var(gen_temp) 
+            }
+            
+            # Print metrics to terminal (Note: You must interpret these numbers in your IEEE paper!)
+            print("\n" + "="*40 + "\n--- NUMPY COMPLETED ENGINEERING METRICS ---")
+            for metric, val in stats.items():
+                print(f"Generator Winding Temp {metric}: {val:.4f}")
+            print("="*40 + "\n")
+            
+            # Pearson Correlation Analysis using NumPy
+            correlation_matrix = np.corrcoef(gen_temp, power_out)
+            print(f"[CORRELATION] Gen Winding Temp vs. Converter Active Power: {correlation_matrix[0,1]:.4f}\n")
+            
+            # Feature engineering: Create a thermodynamic gradient column
+            self.df['thermal_gradient'] = gen_temp - nacelle_temp
+            return stats
+            
+        except Exception as e:
+            print(f"[ANALYTICS ERROR] Mathematical processing crashed: {e}") 
