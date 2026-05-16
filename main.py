@@ -131,3 +131,55 @@ class NacelleThermalPipeline:
             print("[VISUALIZATION SUCCESS] 3 Static engineering charts successfully generated and saved.")
         except Exception as e:
             print(f"[VISUALIZATION ERROR] Failed to output static graphs: {e}")
+
+    def generate_animations(self):
+        """Module 5: Generates automated animation files."""
+        try:
+            if self.df is None:
+                raise ValueError("No data available for animation processing.")
+            
+            # Sort chronologically by a proxy timeline index to ensure clean rendering over time
+            df_sorted = self.df.reset_index(drop=True).iloc[::50] # Downsampled by 50 to ensure faster output compiles
+            
+            # Animation 1: Matplotlib Time-Evolution of Nacelle Temperatures
+            fig, ax = plt.subplots(figsize=(8, 4))
+            x_data, y_data = [], []
+            line, = ax.plot([], [], 'r-', label='Nacelle Air Enclosure Temp')
+            ax.set_xlim(0, len(df_sorted))
+            ax.set_ylim(df_sorted['nacelle_temp'].min() - 2, df_sorted['nacelle_temp'].max() + 2)
+            ax.set_xlabel('Downsampled Operational Chronological Sequence Index')
+            ax.set_ylabel('Temperature (°C)')
+            ax.set_title('Real-time Dynamic Ambient Nacelle Thermal Fluctuations')
+            ax.grid(True)
+
+            def init():
+                line.set_data([], [])
+                return line,
+
+            def update(frame):
+                x_data.append(frame)
+                y_data.append(df_sorted['nacelle_temp'].iloc[frame])
+                line.set_data(x_data, y_data)
+                return line,
+
+            ani = animation.FuncAnimation(fig, update, frames=range(len(df_sorted)), init_func=init, blit=True, repeat=False)
+            ani.save(os.path.join(self.output_dir, 'animated_thermal_timeline.gif'), writer='pillow', fps=15)
+            plt.close()
+
+            # Animation 2: Plotly Express HTML Interactive Animated Scatter Profile
+            # Create a localized artificial categorical grouping like "Hour Blocks" to trace visual steps smoothly
+            df_sorted['Hour_Block'] = (df_sorted.index // 20).astype(str)
+            fig_plotly = px.scatter(
+                df_sorted, 
+                x="generator_speed", 
+                y="active_power_calculated_by_converter", 
+                animation_frame="Hour_Block",
+                color="generator_winding_temp_max",
+                title="Dynamic Kinetic Power Generation Mapping vs Thermal Loads",
+                labels={"generator_speed": "Generator Rotational Speed (RPM)", "active_power_calculated_by_converter": "Active Power (kW)"}
+            )
+            fig_plotly.write_html(os.path.join(self.output_dir, 'animated_power_curve_shift.html'))
+            
+            print("[ANIMATION SUCCESS] 2 Animation exports successfully compiled and written to storage.")
+        except Exception as e:
+            print(f"[ANIMATION ERROR] Dynamic matrix rendering crashed: {e}")
