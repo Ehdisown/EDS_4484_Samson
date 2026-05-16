@@ -1,0 +1,7 @@
+Ensure that the ff libraries are installed upon running
+
+numpy
+pandas
+plotly
+matplotlib
+scikit-learn
