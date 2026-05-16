@@ -188,7 +188,7 @@ class NacelleThermalPipeline:
 if __name__ == "__main__":
     # Instantiating pipeline object to process file structures natively
     pipeline = NacelleThermalPipeline(
-        input_path="data/dataset_original.csv", 
+        input_path="data/wind_data.csv", 
         output_dir="outputs/"
     )
     
