@@ -91,3 +91,43 @@ class NacelleThermalPipeline:
             
         except Exception as e:
             print(f"[ANALYTICS ERROR] Mathematical processing crashed: {e}") 
+
+    def generate_static_visualizations(self):
+        """Module 4: Generates the static engineering plots."""
+        try:
+            if self.df is None:
+                raise ValueError("No data available for visualization.")
+            
+            # Chart 1: The Wind Power Curve Scatter Plot
+            plt.figure(figsize=(8, 5))
+            plt.scatter(self.df['generator_speed'], self.df['active_power_calculated_by_converter'], c=self.df['generator_winding_temp_max'], cmap='jet', alpha=0.6, s=10)
+            plt.colorbar(label='Generator Winding Temp (°C)')
+            plt.xlabel('Generator Rotational Speed (RPM)')
+            plt.ylabel('Active Power Output (kW)')
+            plt.title('Empirical Power Curve Associated with Thermal Loading')
+            plt.grid(True, linestyle='--')
+            plt.savefig(os.path.join(self.output_dir, 'static_power_curve.png'), dpi=300)
+            plt.close()
+
+            # Chart 2: Distribution Histogram of Thermal Gradients
+            plt.figure(figsize=(8, 5))
+            plt.hist(self.df['thermal_gradient'], bins=40, color='crimson', edgecolor='black', alpha=0.7)
+            plt.xlabel('Thermal Gradient (Generator Temp - Nacelle Ambient Temp) [°C]')
+            plt.ylabel('Frequency Count')
+            plt.title('Distribution Profile of Internal Nacelle Heat Accumulation')
+            plt.savefig(os.path.join(self.output_dir, 'static_thermal_distribution.png'), dpi=300)
+            plt.close()
+
+            # Chart 3: Boxplot comparing distinct operational groups
+            plt.figure(figsize=(7, 5))
+            high_load = self.df[self.df['active_power_calculated_by_converter'] > self.df['active_power_calculated_by_converter'].median()]['generator_winding_temp_max']
+            low_load = self.df[self.df['active_power_calculated_by_converter'] <= self.df['active_power_calculated_by_converter'].median()]['generator_winding_temp_max']
+            plt.boxplot([low_load, high_load], labels=['Low Power Regime', 'High Power Regime'])
+            plt.ylabel('Generator Winding Temperature (°C)')
+            plt.title('Thermal stress comparison Across Operational Power Load Profiles')
+            plt.savefig(os.path.join(self.output_dir, 'static_load_boxplot.png'), dpi=300)
+            plt.close()
+
+            print("[VISUALIZATION SUCCESS] 3 Static engineering charts successfully generated and saved.")
+        except Exception as e:
+            print(f"[VISUALIZATION ERROR] Failed to output static graphs: {e}")
