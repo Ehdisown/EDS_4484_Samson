@@ -139,7 +139,7 @@ class NacelleThermalPipeline:
                 raise ValueError("No data available for animation processing.")
             
             # Sort chronologically by a proxy timeline index to ensure clean rendering over time
-            df_sorted = self.df.reset_index(drop=True).iloc[::50] # Downsampled by 50 to ensure faster output compiles
+            df_sorted = self.df.reset_index(drop=True).iloc[::100] # Downsampled by 100 to ensure faster output compiles
             
             # Animation 1: Matplotlib Time-Evolution of Nacelle Temperatures
             fig, ax = plt.subplots(figsize=(8, 4))
@@ -173,7 +173,7 @@ class NacelleThermalPipeline:
                 df_sorted, 
                 x="generator_speed", 
                 y="active_power_calculated_by_converter", 
-                animation_frame="Hour_Block",
+                animation_frame="Sequence_Frame",
                 color="generator_winding_temp_max",
                 title="Dynamic Kinetic Power Generation Mapping vs Thermal Loads",
                 labels={"generator_speed": "Generator Rotational Speed (RPM)", "active_power_calculated_by_converter": "Active Power (kW)"}
