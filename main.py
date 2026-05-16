@@ -183,3 +183,18 @@ class NacelleThermalPipeline:
             print("[ANIMATION SUCCESS] 2 Animation exports successfully compiled and written to storage.")
         except Exception as e:
             print(f"[ANIMATION ERROR] Dynamic matrix rendering crashed: {e}")
+
+# Executable entry point mapping sequence
+if __name__ == "__main__":
+    # Instantiating pipeline object to process file structures natively
+    pipeline = NacelleThermalPipeline(
+        input_path="data/dataset_original.csv", 
+        output_dir="outputs/"
+    )
+    
+    # Sequence Executions
+    pipeline.ingest_data()
+    pipeline.clean_and_filter_data()
+    pipeline.perform_engineering_analytics()
+    pipeline.generate_static_visualizations()
+    pipeline.generate_animations()
